@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Meme Library</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div>
+        <h1>Meme Library</h1>
+        <p id="summary">选择图片文件夹后开始整理。</p>
+      </div>
+      <label class="button">
+        选择文件夹
+        <input id="folderInput" type="file" accept="image/*" webkitdirectory multiple />
+      </label>
+    </header>
+
+    <section class="controls">
+      <input id="searchInput" type="search" placeholder="搜索文件名或标签" />
+      <select id="sortSelect">
+        <option value="newest">最新优先</option>
+        <option value="oldest">最早优先</option>
+        <option value="name">文件名</option>
+        <option value="favorite">收藏优先</option>
+      </select>
+      <label class="check">
+        <input id="favoritesOnly" type="checkbox" />
+        只看收藏
+      </label>
+    </section>
+
+    <section id="gallery" class="gallery"></section>
+
+    <section id="emptyState" class="empty">
+      <h2>还没有图片</h2>
+      <p>点击“选择文件夹”，选择你的 meme 图片目录。</p>
+    </section>
+  </main>
+
+  <dialog id="dialog">
+    <button id="closeDialog" class="close">×</button>
+    <img id="previewImage" alt="" />
+    <aside>
+      <h2 id="detailName"></h2>
+      <p id="detailMeta"></p>
+      <label>
+        标签
+        <input id="tagInput" type="text" placeholder="例如 reaction, funny, work" />
+      </label>
+      <button id="favoriteButton">收藏</button>
+      <button id="copyButton">复制文件名</button>
+    </aside>
+  </dialog>
+
+  <script src="script.js"></script>
+</body>
+</html>

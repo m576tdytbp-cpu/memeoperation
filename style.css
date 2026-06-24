@@ -1,0 +1,299 @@
+:root {
+  --bg: #f6f3ee;
+  --panel: #ffffff;
+  --ink: #1c1d20;
+  --muted: #6e7179;
+  --line: #ded7cc;
+  --accent: #167c80;
+  --warm: #d86b3d;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.app {
+  width: min(1200px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 24px 0 48px;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 18px;
+}
+
+h1, h2, p {
+  margin: 0;
+}
+
+h1 {
+  font-size: 40px;
+  line-height: 1;
+}
+
+.topbar p {
+  margin-top: 8px;
+  color: var(--muted);
+}
+
+.button,
+button,
+input,
+select {
+  font: inherit;
+}
+
+.button,
+button,
+select,
+.controls input {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--ink);
+}
+
+.button {
+  min-height: 42px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.button input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) 170px max-content;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255,255,255,.7);
+}
+
+.controls input,
+.controls select {
+  min-height: 40px;
+  padding: 0 12px;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.card {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.thumb {
+  width: 100%;
+  border: 0;
+  padding: 0;
+  display: block;
+  cursor: zoom-in;
+}
+
+.thumb img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  display: block;
+  object-fit: cover;
+  background: #ece7df;
+}
+
+.body {
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.name {
+  min-height: 34px;
+  font-size: 13px;
+  line-height: 1.3;
+  word-break: break-word;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.star {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  cursor: pointer;
+}
+
+.star.active {
+  color: var(--warm);
+  border-color: var(--warm);
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  min-height: 20px;
+}
+
+.tag {
+  border-radius: 999px;
+  padding: 3px 8px;
+  background: rgba(22,124,128,.12);
+  color: #0c585b;
+  font-size: 12px;
+}
+
+.empty {
+  min-height: 240px;
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.empty h2 {
+  color: var(--ink);
+}
+
+dialog {
+  width: min(980px, calc(100% - 28px));
+  border: 0;
+  border-radius: 8px;
+  padding: 0;
+  overflow: hidden;
+}
+
+dialog::backdrop {
+  background: rgba(0,0,0,.55);
+}
+
+dialog[open] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+}
+
+#previewImage {
+  width: 100%;
+  height: min(78vh, 760px);
+  object-fit: contain;
+  background: #161616;
+}
+
+dialog aside {
+  padding: 20px;
+  display: grid;
+  gap: 14px;
+  align-content: start;
+  border-left: 1px solid var(--line);
+}
+
+dialog aside h2 {
+  font-size: 18px;
+  word-break: break-word;
+}
+
+dialog aside p {
+  color: var(--muted);
+}
+
+dialog aside label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+dialog aside input {
+  min-height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0 10px;
+}
+
+dialog aside button {
+  min-height: 40px;
+  cursor: pointer;
+}
+
+.close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 36px;
+  height: 36px;
+  font-size: 24px;
+  z-index: 2;
+  cursor: pointer;
+}
+
+@media (max-width: 720px) {
+  .app {
+    width: min(100% - 20px, 1200px);
+  }
+
+  .topbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  h1 {
+    font-size: 32px;
+  }
+
+  .controls {
+    grid-template-columns: 1fr;
+  }
+
+  dialog[open] {
+    grid-template-columns: 1fr;
+  }
+
+  #previewImage {
+    height: auto;
+    max-height: 58vh;
+  }
+
+  dialog aside {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+}
