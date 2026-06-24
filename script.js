@@ -18,12 +18,16 @@ const copyButton = document.querySelector("#copyButton");
 const storageKey = "meme-library-v1";
 const imagePattern = /\.(png|jpe?g|gif|webp|avif)$/i;
 
+const githubOwner = "m576tdytbp-cpu";
+const githubRepo = "memeoperation";
+const cloudFolder = "memes";
+
 let memes = [];
 let activeId = "";
 let saved = loadSaved();
 
 folderInput.addEventListener("change", (event) => {
-  loadFiles([...event.target.files]);
+  loadLocalFiles([...event.target.files]);
 });
 
 searchInput.addEventListener("input", render);
@@ -61,8 +65,48 @@ copyButton.addEventListener("click", async () => {
   }, 1200);
 });
 
-function loadFiles(files) {
-  memes.forEach((meme) => URL.revokeObjectURL(meme.url));
+async function loadCloudMemes() {
+  summary.textContent = "正在加载云端 meme 库...";
+
+  try {
+    const apiUrl = `https://api.github.com/repos/${githubOwner}/${githubRepo}/contents/${cloudFolder}`;
+    const response = await fetch(apiUrl);
+
+    if (!response.ok) {
+      throw new Error("GitHub folder not ready");
+    }
+
+    const files = await response.json();
+
+    memes = files
+      .filter((file) => file.type === "file" && imagePattern.test(file.name))
+      .map((file) => {
+        const id = file.path;
+        const item = saved[id] || {};
+
+        return {
+          id,
+          name: file.name,
+          path: file.path,
+          size: file.size || 0,
+          modified: Date.now(),
+          url: file.download_url,
+          favorite: Boolean(item.favorite),
+          tags: Array.isArray(item.tags) ? item.tags : [],
+        };
+      });
+
+    render();
+  } catch (error) {
+    summary.textContent = "云端图片还没准备好。你也可以先选择本地文件夹。";
+    render();
+  }
+}
+
+function loadLocalFiles(files) {
+  memes
+    .filter((meme) => meme.url.startsWith("blob:"))
+    .forEach((meme) => URL.revokeObjectURL(meme.url));
 
   memes = files
     .filter((file) => file.type.startsWith("image/") || imagePattern.test(file.name))
@@ -124,7 +168,7 @@ function render() {
     row.className = "row";
 
     const date = document.createElement("span");
-    date.textContent = formatDate(meme.modified);
+    date.textContent = meme.modified ? formatDate(meme.modified) : "云端";
 
     const star = document.createElement("button");
     star.className = meme.favorite ? "star active" : "star";
@@ -144,8 +188,8 @@ function render() {
   });
 
   summary.textContent = memes.length
-    ? `${memes.length} 张图片，当前显示 ${visible.length} 张。`
-    : "选择图片文件夹后开始整理。";
+    ? `${memes.length} 张云端图片，当前显示 ${visible.length} 张。`
+    : "云端 meme 文件夹还没有图片。";
 
   emptyState.hidden = memes.length > 0;
 }
@@ -180,7 +224,7 @@ function openPreview(id) {
   previewImage.src = meme.url;
   previewImage.alt = meme.name;
   detailName.textContent = meme.name;
-  detailMeta.textContent = `${formatSize(meme.size)} · ${new Date(meme.modified).toLocaleString("zh-CN")}`;
+  detailMeta.textContent = `${formatSize(meme.size)} · ${meme.path}`;
   tagInput.value = meme.tags.join(", ");
   favoriteButton.textContent = meme.favorite ? "取消收藏" : "收藏";
 
@@ -221,8 +265,9 @@ function formatDate(timestamp) {
 }
 
 function formatSize(bytes) {
+  if (!bytes) return "未知大小";
   if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
-render();
+loadCloudMemes();
