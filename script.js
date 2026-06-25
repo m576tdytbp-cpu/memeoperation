@@ -15,6 +15,12 @@ const tagInput = document.querySelector("#tagInput");
 const favoriteButton = document.querySelector("#favoriteButton");
 const copyButton = document.querySelector("#copyButton");
 
+const cloudFileInput = document.querySelector("#cloudFileInput");
+const cloudTitleInput = document.querySelector("#cloudTitleInput");
+const cloudTagsInput = document.querySelector("#cloudTagsInput");
+const cloudUploadButton = document.querySelector("#cloudUploadButton");
+const uploadStatus = document.querySelector("#uploadStatus");
+
 const storageKey = "meme-library-v1";
 const imagePattern = /\.(png|jpe?g|gif|webp|avif)$/i;
 
@@ -34,6 +40,8 @@ searchInput.addEventListener("input", render);
 sortSelect.addEventListener("change", render);
 favoritesOnly.addEventListener("change", render);
 closeDialog.addEventListener("click", () => dialog.close());
+
+cloudUploadButton.addEventListener("click", uploadCloudMeme);
 
 tagInput.addEventListener("change", () => {
   const meme = memes.find((item) => item.id === activeId);
@@ -69,6 +77,81 @@ copyButton.addEventListener("click", async () => {
     copyButton.textContent = "复制文件名";
   }, 1200);
 });
+
+async function uploadCloudMeme() {
+  const file = cloudFileInput.files[0];
+
+  if (!file) {
+    uploadStatus.textContent = "先选择一张图片。";
+    return;
+  }
+
+  if (!file.type.startsWith("image/") && !imagePattern.test(file.name)) {
+    uploadStatus.textContent = "请选择图片文件。";
+    return;
+  }
+
+  const title = cloudTitleInput.value.trim() || file.name.replace(/\.[^.]+$/, "");
+  const tags = parseTags(cloudTagsInput.value);
+  const safeName = makeSafeFileName(file.name);
+
+  cloudUploadButton.disabled = true;
+  uploadStatus.textContent = "正在上传图片...";
+
+  try {
+    const uploadResponse = await fetch(
+      `${supabaseUrl}/storage/v1/object/${bucketName}/${encodeURIComponent(safeName)}`,
+      {
+        method: "POST",
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+          "Content-Type": file.type || "application/octet-stream",
+          "x-upsert": "false",
+        },
+        body: file,
+      }
+    );
+
+    if (!uploadResponse.ok) {
+      const errorText = await uploadResponse.text();
+      throw new Error(`图片上传失败：${errorText}`);
+    }
+
+    uploadStatus.textContent = "图片已上传，正在写入资料...";
+
+    const rowResponse = await fetch(`${supabaseUrl}/rest/v1/memes`, {
+      method: "POST",
+      headers: {
+        apikey: supabaseKey,
+        Authorization: `Bearer ${supabaseKey}`,
+        "Content-Type": "application/json",
+        Prefer: "return=representation",
+      },
+      body: JSON.stringify({
+        title,
+        file_path: safeName,
+        tags,
+      }),
+    });
+
+    if (!rowResponse.ok) {
+      const errorText = await rowResponse.text();
+      throw new Error(`资料写入失败：${errorText}`);
+    }
+
+    cloudFileInput.value = "";
+    cloudTitleInput.value = "";
+    cloudTagsInput.value = "";
+    uploadStatus.textContent = "上传成功。";
+
+    await loadCloudMemes();
+  } catch (error) {
+    uploadStatus.textContent = error.message || "上传失败，请检查 Supabase 权限。";
+  } finally {
+    cloudUploadButton.disabled = false;
+  }
+}
 
 async function loadCloudMemes() {
   summary.textContent = "正在加载 Supabase meme 库...";
@@ -267,6 +350,18 @@ function parseTags(value) {
     .map((tag) => tag.trim())
     .filter(Boolean)
     .slice(0, 12);
+}
+
+function makeSafeFileName(originalName) {
+  const extension = originalName.includes(".")
+    ? originalName.split(".").pop().toLowerCase()
+    : "png";
+
+  if (!["png", "jpg", "jpeg", "gif", "webp", "avif"].includes(extension)) {
+    return `${crypto.randomUUID()}.png`;
+  }
+
+  return `${Date.now()}-${crypto.randomUUID()}.${extension}`;
 }
 
 function formatDate(timestamp) {
