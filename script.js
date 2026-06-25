@@ -18,10 +18,6 @@ const copyButton = document.querySelector("#copyButton");
 const storageKey = "meme-library-v1";
 const imagePattern = /\.(png|jpe?g|gif|webp|avif)$/i;
 
-const githubOwner = "m576tdytbp-cpu";
-const githubRepo = "memeoperation";
-const cloudFolder = "memes";
-
 let memes = [];
 let activeId = "";
 let saved = loadSaved();
@@ -69,28 +65,27 @@ async function loadCloudMemes() {
   summary.textContent = "正在加载云端 meme 库...";
 
   try {
-    const apiUrl = `https://api.github.com/repos/${githubOwner}/${githubRepo}/contents/${cloudFolder}`;
-    const response = await fetch(apiUrl);
+    const response = await fetch(`memes.json?v=${Date.now()}`);
 
     if (!response.ok) {
-      throw new Error("GitHub folder not ready");
+      throw new Error("memes.json not found");
     }
 
     const files = await response.json();
 
     memes = files
-      .filter((file) => file.type === "file" && imagePattern.test(file.name))
+      .filter((file) => file.file && imagePattern.test(file.file))
       .map((file) => {
-        const id = file.path;
+        const id = file.file;
         const item = saved[id] || {};
 
         return {
           id,
-          name: file.name,
-          path: file.path,
+          name: file.name || file.file.split("/").pop(),
+          path: file.file,
           size: file.size || 0,
-          modified: Date.now(),
-          url: file.download_url,
+          modified: file.modified || Date.now(),
+          url: encodeURI(file.file),
           favorite: Boolean(item.favorite),
           tags: Array.isArray(item.tags) ? item.tags : [],
         };
@@ -98,7 +93,7 @@ async function loadCloudMemes() {
 
     render();
   } catch (error) {
-    summary.textContent = "云端图片还没准备好。你也可以先选择本地文件夹。";
+    summary.textContent = "没有找到 memes.json，或图片清单格式不正确。";
     render();
   }
 }
