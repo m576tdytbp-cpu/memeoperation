@@ -54,8 +54,13 @@ copyButton.addEventListener("click", async () => {
   const meme = memes.find((item) => item.id === activeId);
   if (!meme) return;
 
-  await navigator.clipboard.writeText(meme.name);
-  copyButton.textContent = "已复制";
+  try {
+    await navigator.clipboard.writeText(meme.name);
+    copyButton.textContent = "已复制";
+  } catch {
+    copyButton.textContent = "复制失败";
+  }
+
   setTimeout(() => {
     copyButton.textContent = "复制文件名";
   }, 1200);
@@ -93,6 +98,7 @@ async function loadCloudMemes() {
 
     render();
   } catch (error) {
+    memes = [];
     summary.textContent = "没有找到 memes.json，或图片清单格式不正确。";
     render();
   }
@@ -184,7 +190,7 @@ function render() {
 
   summary.textContent = memes.length
     ? `${memes.length} 张云端图片，当前显示 ${visible.length} 张。`
-    : "云端 meme 文件夹还没有图片。";
+    : "云端 meme 文件夹还没有图片，或 memes.json 还没有配置。";
 
   emptyState.hidden = memes.length > 0;
 }
