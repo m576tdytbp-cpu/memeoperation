@@ -43,8 +43,12 @@ if (sortSelect) sortSelect.addEventListener("change", render);
 if (favoritesOnly) favoritesOnly.addEventListener("change", render);
 if (closeDialog) closeDialog.addEventListener("click", () => dialog.close());
 
+if (uploadStatus) {
+  uploadStatus.textContent = "上传组件已加载。";
+}
+
 if (cloudUploadButton) {
-  cloudUploadButton.addEventListener("click", uploadCloudMeme);
+  cloudUploadButton.onclick = uploadCloudMeme;
 }
 
 if (tagInput) {
