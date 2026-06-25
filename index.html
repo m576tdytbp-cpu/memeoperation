@@ -33,6 +33,17 @@
       </label>
     </section>
 
+    <section class="upload-panel">
+  <h2>添加 meme</h2>
+  <div class="upload-grid">
+    <input id="cloudFileInput" type="file" accept="image/*" />
+    <input id="cloudTitleInput" type="text" placeholder="标题，例如：上班状态" />
+    <input id="cloudTagsInput" type="text" placeholder="标签，例如：工作 搞笑 reaction" />
+    <button id="cloudUploadButton" type="button">上传到云端</button>
+  </div>
+  <p id="uploadStatus"></p>
+</section>
+    
     <section id="gallery" class="gallery"></section>
 
     <section id="emptyState" class="empty">
