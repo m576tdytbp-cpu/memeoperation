@@ -297,3 +297,47 @@ dialog aside button {
     border-top: 1px solid var(--line);
   }
 }
+.upload-panel {
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255,255,255,.7);
+}
+
+.upload-panel h2 {
+  margin-bottom: 12px;
+  font-size: 20px;
+}
+
+.upload-grid {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(160px, 1fr) minmax(160px, 1fr) max-content;
+  gap: 12px;
+  align-items: center;
+}
+
+.upload-grid input,
+.upload-grid button {
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--ink);
+}
+
+.upload-grid button {
+  cursor: pointer;
+}
+
+#uploadStatus {
+  margin-top: 10px;
+  color: var(--muted);
+}
+
+@media (max-width: 900px) {
+  .upload-grid {
+    grid-template-columns: 1fr;
+  }
+}
