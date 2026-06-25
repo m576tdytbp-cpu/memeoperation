@@ -32,53 +32,68 @@ let memes = [];
 let activeId = "";
 let saved = loadSaved();
 
-folderInput.addEventListener("change", (event) => {
-  loadLocalFiles([...event.target.files]);
-});
+if (folderInput) {
+  folderInput.addEventListener("change", (event) => {
+    loadLocalFiles([...event.target.files]);
+  });
+}
 
-searchInput.addEventListener("input", render);
-sortSelect.addEventListener("change", render);
-favoritesOnly.addEventListener("change", render);
-closeDialog.addEventListener("click", () => dialog.close());
+if (searchInput) searchInput.addEventListener("input", render);
+if (sortSelect) sortSelect.addEventListener("change", render);
+if (favoritesOnly) favoritesOnly.addEventListener("change", render);
+if (closeDialog) closeDialog.addEventListener("click", () => dialog.close());
 
-cloudUploadButton.addEventListener("click", uploadCloudMeme);
+if (cloudUploadButton) {
+  cloudUploadButton.addEventListener("click", uploadCloudMeme);
+}
 
-tagInput.addEventListener("change", () => {
-  const meme = memes.find((item) => item.id === activeId);
-  if (!meme) return;
+if (tagInput) {
+  tagInput.addEventListener("change", () => {
+    const meme = memes.find((item) => item.id === activeId);
+    if (!meme) return;
 
-  meme.tags = parseTags(tagInput.value);
-  saveMeme(meme);
-  render();
-});
+    meme.tags = parseTags(tagInput.value);
+    saveMeme(meme);
+    render();
+  });
+}
 
-favoriteButton.addEventListener("click", () => {
-  const meme = memes.find((item) => item.id === activeId);
-  if (!meme) return;
+if (favoriteButton) {
+  favoriteButton.addEventListener("click", () => {
+    const meme = memes.find((item) => item.id === activeId);
+    if (!meme) return;
 
-  meme.favorite = !meme.favorite;
-  saveMeme(meme);
-  openPreview(meme.id);
-  render();
-});
+    meme.favorite = !meme.favorite;
+    saveMeme(meme);
+    openPreview(meme.id);
+    render();
+  });
+}
 
-copyButton.addEventListener("click", async () => {
-  const meme = memes.find((item) => item.id === activeId);
-  if (!meme) return;
+if (copyButton) {
+  copyButton.addEventListener("click", async () => {
+    const meme = memes.find((item) => item.id === activeId);
+    if (!meme) return;
 
-  try {
-    await navigator.clipboard.writeText(meme.name);
-    copyButton.textContent = "已复制";
-  } catch {
-    copyButton.textContent = "复制失败";
-  }
+    try {
+      await navigator.clipboard.writeText(meme.name);
+      copyButton.textContent = "已复制";
+    } catch {
+      copyButton.textContent = "复制失败";
+    }
 
-  setTimeout(() => {
-    copyButton.textContent = "复制文件名";
-  }, 1200);
-});
+    setTimeout(() => {
+      copyButton.textContent = "复制文件名";
+    }, 1200);
+  });
+}
 
 async function uploadCloudMeme() {
+  if (!cloudFileInput || !cloudTitleInput || !cloudTagsInput || !uploadStatus || !cloudUploadButton) {
+    alert("上传区域没有加载完整，请检查 index.html 里的上传表单。");
+    return;
+  }
+
   const file = cloudFileInput.files[0];
 
   if (!file) {
@@ -100,7 +115,7 @@ async function uploadCloudMeme() {
 
   try {
     const uploadResponse = await fetch(
-      `${supabaseUrl}/storage/v1/object/${bucketName}/${encodeURIComponent(safeName)}`,
+      `${supabaseUrl}/storage/v1/object/${bucketName}/${safeName}`,
       {
         method: "POST",
         headers: {
@@ -154,7 +169,7 @@ async function uploadCloudMeme() {
 }
 
 async function loadCloudMemes() {
-  summary.textContent = "正在加载 Supabase meme 库...";
+  if (summary) summary.textContent = "正在加载 Supabase meme 库...";
 
   try {
     const response = await fetch(
@@ -178,7 +193,7 @@ async function loadCloudMemes() {
       .map((row) => {
         const id = String(row.id);
         const item = saved[id] || {};
-        const publicUrl = `${supabaseUrl}/storage/v1/object/public/${bucketName}/${encodeURIComponent(row.file_path)}`;
+        const publicUrl = `${supabaseUrl}/storage/v1/object/public/${bucketName}/${row.file_path}`;
 
         return {
           id,
@@ -195,7 +210,9 @@ async function loadCloudMemes() {
     render();
   } catch (error) {
     memes = [];
-    summary.textContent = "Supabase 读取失败。请检查 Project URL、Publishable key、RLS 读取规则和表数据。";
+    if (summary) {
+      summary.textContent = "Supabase 读取失败。请检查 Project URL、Publishable key、RLS 读取规则和表数据。";
+    }
     render();
   }
 }
@@ -228,7 +245,8 @@ function loadLocalFiles(files) {
 
 function render() {
   const visible = getVisibleMemes();
-  gallery.innerHTML = "";
+
+  if (gallery) gallery.innerHTML = "";
 
   visible.forEach((meme) => {
     const card = document.createElement("article");
@@ -281,22 +299,25 @@ function render() {
     row.append(date, star);
     body.append(name, tags, row);
     card.append(thumb, body);
-    gallery.append(card);
+
+    if (gallery) gallery.append(card);
   });
 
-  summary.textContent = memes.length
-    ? `${memes.length} 张 Supabase 图片，当前显示 ${visible.length} 张。`
-    : "Supabase meme 表里还没有可显示的图片。";
+  if (summary) {
+    summary.textContent = memes.length
+      ? `${memes.length} 张 Supabase 图片，当前显示 ${visible.length} 张。`
+      : "Supabase meme 表里还没有可显示的图片。";
+  }
 
-  emptyState.hidden = memes.length > 0;
+  if (emptyState) emptyState.hidden = memes.length > 0;
 }
 
 function getVisibleMemes() {
-  const query = searchInput.value.trim().toLowerCase();
+  const query = searchInput ? searchInput.value.trim().toLowerCase() : "";
 
   return memes
     .filter((meme) => {
-      if (favoritesOnly.checked && !meme.favorite) return false;
+      if (favoritesOnly && favoritesOnly.checked && !meme.favorite) return false;
       if (!query) return true;
 
       return `${meme.name} ${meme.path} ${meme.tags.join(" ")}`
@@ -304,9 +325,11 @@ function getVisibleMemes() {
         .includes(query);
     })
     .sort((a, b) => {
-      if (sortSelect.value === "oldest") return a.modified - b.modified;
-      if (sortSelect.value === "name") return a.name.localeCompare(b.name, "zh-CN");
-      if (sortSelect.value === "favorite") {
+      const sortValue = sortSelect ? sortSelect.value : "newest";
+
+      if (sortValue === "oldest") return a.modified - b.modified;
+      if (sortValue === "name") return a.name.localeCompare(b.name, "zh-CN");
+      if (sortValue === "favorite") {
         return Number(b.favorite) - Number(a.favorite) || b.modified - a.modified;
       }
       return b.modified - a.modified;
@@ -315,15 +338,19 @@ function getVisibleMemes() {
 
 function openPreview(id) {
   const meme = memes.find((item) => item.id === id);
-  if (!meme) return;
+  if (!meme || !dialog) return;
 
   activeId = id;
-  previewImage.src = meme.url;
-  previewImage.alt = meme.name;
-  detailName.textContent = meme.name;
-  detailMeta.textContent = `${formatSize(meme.size)} · ${meme.path}`;
-  tagInput.value = meme.tags.join(", ");
-  favoriteButton.textContent = meme.favorite ? "取消收藏" : "收藏";
+
+  if (previewImage) {
+    previewImage.src = meme.url;
+    previewImage.alt = meme.name;
+  }
+
+  if (detailName) detailName.textContent = meme.name;
+  if (detailMeta) detailMeta.textContent = `${formatSize(meme.size)} · ${meme.path}`;
+  if (tagInput) tagInput.value = meme.tags.join(", ");
+  if (favoriteButton) favoriteButton.textContent = meme.favorite ? "取消收藏" : "收藏";
 
   if (!dialog.open) dialog.showModal();
 }
@@ -357,11 +384,10 @@ function makeSafeFileName(originalName) {
     ? originalName.split(".").pop().toLowerCase()
     : "png";
 
-  if (!["png", "jpg", "jpeg", "gif", "webp", "avif"].includes(extension)) {
-    return `${crypto.randomUUID()}.png`;
-  }
+  const allowedExtensions = ["png", "jpg", "jpeg", "gif", "webp", "avif"];
+  const safeExtension = allowedExtensions.includes(extension) ? extension : "png";
 
-  return `${Date.now()}-${crypto.randomUUID()}.${extension}`;
+  return `${Date.now()}-${crypto.randomUUID()}.${safeExtension}`;
 }
 
 function formatDate(timestamp) {
