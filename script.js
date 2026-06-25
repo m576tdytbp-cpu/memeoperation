@@ -18,6 +18,10 @@ const copyButton = document.querySelector("#copyButton");
 const storageKey = "meme-library-v1";
 const imagePattern = /\.(png|jpe?g|gif|webp|avif)$/i;
 
+const supabaseUrl = "https://ujvhfuzuxtfzynhgaibx.supabase.co";
+const supabaseKey = "sb_publishable_1nYW_q7P4olPQl2gzAJjTA_gGz-_CXH";
+const bucketName = "memes";
+
 let memes = [];
 let activeId = "";
 let saved = loadSaved();
@@ -67,39 +71,48 @@ copyButton.addEventListener("click", async () => {
 });
 
 async function loadCloudMemes() {
-  summary.textContent = "正在加载云端 meme 库...";
+  summary.textContent = "正在加载 Supabase meme 库...";
 
   try {
-    const response = await fetch(`memes.json?v=${Date.now()}`);
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/memes?select=*&order=created_at.desc`,
+      {
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+        },
+      }
+    );
 
     if (!response.ok) {
-      throw new Error("memes.json not found");
+      throw new Error(`Supabase request failed: ${response.status}`);
     }
 
-    const files = await response.json();
+    const rows = await response.json();
 
-    memes = files
-      .filter((file) => file.file && imagePattern.test(file.file))
-      .map((file) => {
-        const id = file.file;
+    memes = rows
+      .filter((row) => row.file_path && imagePattern.test(row.file_path))
+      .map((row) => {
+        const id = String(row.id);
         const item = saved[id] || {};
+        const publicUrl = `${supabaseUrl}/storage/v1/object/public/${bucketName}/${encodeURIComponent(row.file_path)}`;
 
         return {
           id,
-          name: file.name || file.file.split("/").pop(),
-          path: file.file,
-          size: file.size || 0,
-          modified: file.modified || Date.now(),
-          url: encodeURI(file.file),
+          name: row.title || row.file_path,
+          path: row.file_path,
+          size: 0,
+          modified: row.created_at ? new Date(row.created_at).getTime() : Date.now(),
+          url: publicUrl,
           favorite: Boolean(item.favorite),
-          tags: Array.isArray(item.tags) ? item.tags : [],
+          tags: Array.isArray(row.tags) ? row.tags : [],
         };
       });
 
     render();
   } catch (error) {
     memes = [];
-    summary.textContent = "没有找到 memes.json，或图片清单格式不正确。";
+    summary.textContent = "Supabase 读取失败。请检查 Project URL、Publishable key、RLS 读取规则和表数据。";
     render();
   }
 }
@@ -189,8 +202,8 @@ function render() {
   });
 
   summary.textContent = memes.length
-    ? `${memes.length} 张云端图片，当前显示 ${visible.length} 张。`
-    : "云端 meme 文件夹还没有图片，或 memes.json 还没有配置。";
+    ? `${memes.length} 张 Supabase 图片，当前显示 ${visible.length} 张。`
+    : "Supabase meme 表里还没有可显示的图片。";
 
   emptyState.hidden = memes.length > 0;
 }
