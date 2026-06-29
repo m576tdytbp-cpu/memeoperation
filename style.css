@@ -341,3 +341,125 @@ dialog aside button {
     grid-template-columns: 1fr;
   }
 }
+
+.intent-panel {
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255,255,255,.7);
+}
+
+.intent-panel h2 {
+  margin-bottom: 12px;
+  font-size: 20px;
+}
+
+.intent-grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) max-content;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.intent-grid textarea {
+  width: 100%;
+  min-height: 86px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--ink);
+  resize: vertical;
+  font: inherit;
+}
+
+.intent-grid button {
+  min-width: 120px;
+  padding: 0 16px;
+  cursor: pointer;
+}
+
+.intent-examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.intent-examples button {
+  min-height: 34px;
+  padding: 0 10px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.recommendation-summary {
+  margin-top: 10px;
+  color: var(--muted);
+}
+
+.recommendations {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.recommendation-card {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.recommendation-card button {
+  width: 100%;
+  border: 0;
+  padding: 0;
+  display: block;
+  cursor: pointer;
+  background: transparent;
+  text-align: left;
+}
+
+.recommendation-card img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  display: block;
+  background: #ece7df;
+}
+
+.recommendation-body {
+  padding: 10px;
+}
+
+.recommendation-rank {
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.recommendation-title {
+  margin-top: 4px;
+  font-size: 13px;
+  line-height: 1.3;
+}
+
+.recommendation-reason {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+@media (max-width: 720px) {
+  .intent-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .intent-grid button {
+    min-height: 42px;
+  }
+}
