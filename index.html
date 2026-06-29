@@ -35,6 +35,26 @@
 
   <p id="recommendationSummary" class="recommendation-summary">输入你的想法，系统会从模板库里推荐最合适的梗图。</p>
   <div id="recommendations" class="recommendations"></div>
+
+<section id="composerPanel" class="composer-panel" hidden>
+  <h2>生成结果</h2>
+  <div class="composer-layout">
+    <canvas id="memeCanvas" width="900" height="900"></canvas>
+    <div class="composer-controls">
+      <label>
+        上方文字
+        <input id="topTextInput" type="text" placeholder="可选，例如：以前的我" />
+      </label>
+      <label>
+        下方文字
+        <textarea id="bottomTextInput" rows="4" placeholder="输入要放到图片上的文字"></textarea>
+      </label>
+      <button id="renderMemeButton" type="button">重新生成</button>
+      <button id="downloadMemeButton" type="button">下载图片</button>
+    </div>
+  </div>
+</section>
+      
 </section>
     
     <section class="controls">
