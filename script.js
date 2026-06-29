@@ -439,22 +439,44 @@ function renderRecommendations() {
 }
 
 function rankMemes(query) {
+  const normalizedQuery = normalizeText(query);
   const tokens = tokenize(query);
 
   return memes
     .map((meme) => {
+      const tags = meme.tags || [];
+      const useCases = meme.useCases || [];
+
       const fields = [
         meme.name,
         meme.path,
         meme.description,
         meme.emotion,
-        ...(meme.tags || []),
-        ...(meme.useCases || []),
+        ...tags,
+        ...useCases,
       ];
 
       const haystack = normalizeText(fields.join(" "));
       let score = 0;
       const matched = [];
+
+      for (const tag of tags) {
+        const normalizedTag = normalizeText(tag);
+
+        if (normalizedTag && normalizedQuery.includes(normalizedTag)) {
+          score += 12;
+          matched.push(tag);
+        }
+      }
+
+      for (const useCase of useCases) {
+        const normalizedUseCase = normalizeText(useCase);
+
+        if (normalizedUseCase && normalizedQuery.includes(normalizedUseCase)) {
+          score += 8;
+          matched.push(useCase);
+        }
+      }
 
       for (const token of tokens) {
         if (!token) continue;
@@ -464,10 +486,21 @@ function rankMemes(query) {
           matched.push(token);
         }
 
-        for (const field of fields) {
-          const normalizedField = normalizeText(String(field));
-          if (normalizedField === token) {
+        if (meme.name && normalizeText(meme.name).includes(token)) {
+          score += 2;
+        }
+
+        for (const tag of tags) {
+          const normalizedTag = normalizeText(tag);
+
+          if (normalizedTag === token) {
+            score += 8;
+            matched.push(tag);
+          }
+
+          if (normalizedTag && (normalizedTag.includes(token) || token.includes(normalizedTag))) {
             score += 4;
+            matched.push(tag);
           }
         }
       }
@@ -628,7 +661,7 @@ function parseTags(value) {
 function tokenize(value) {
   const normalized = normalizeText(value);
   const latinTokens = normalized.match(/[a-z0-9]+/g) || [];
-  const cjkSequences = normalized.match(/[\u4e00-\u9fa5]+/g) || [];
+  const cjkSequences = normalized.match(/[\u3400-\u9fff]+/g) || [];
   const cjkTokens = [];
 
   cjkSequences.forEach((sequence) => {
