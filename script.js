@@ -587,30 +587,6 @@ function makeReason(matched, meme, score) {
   return `综合相似度：${score.toFixed(1)}`;
 }
 
-function getVisibleMemes() {
-  const query = searchInput ? searchInput.value.trim().toLowerCase() : "";
-
-  return memes
-    .filter((meme) => {
-      if (favoritesOnly && favoritesOnly.checked && !meme.favorite) return false;
-      if (!query) return true;
-
-      return `${meme.name} ${meme.path} ${meme.tags.join(" ")} ${meme.description} ${meme.useCases.join(" ")} ${meme.emotion}`
-        .toLowerCase()
-        .includes(query);
-    })
-    .sort((a, b) => {
-      const sortValue = sortSelect ? sortSelect.value : "newest";
-
-      if (sortValue === "oldest") return a.modified - b.modified;
-      if (sortValue === "name") return a.name.localeCompare(b.name, "zh-CN");
-      if (sortValue === "favorite") {
-        return Number(b.favorite) - Number(a.favorite) || b.modified - a.modified;
-      }
-      return b.modified - a.modified;
-    });
-}
-
 function selectTemplateForComposer(id) {
   const meme = memes.find((item) => item.id === id);
   if (!meme || !composerPanel) return;
@@ -749,6 +725,30 @@ function wrapText(context, text, maxWidth, fontSize) {
   if (currentLine) lines.push(currentLine);
 
   return lines.slice(0, 5);
+}
+
+function getVisibleMemes() {
+  const query = searchInput ? searchInput.value.trim().toLowerCase() : "";
+
+  return memes
+    .filter((meme) => {
+      if (favoritesOnly && favoritesOnly.checked && !meme.favorite) return false;
+      if (!query) return true;
+
+      return `${meme.name} ${meme.path} ${meme.tags.join(" ")} ${meme.description} ${meme.useCases.join(" ")} ${meme.emotion}`
+        .toLowerCase()
+        .includes(query);
+    })
+    .sort((a, b) => {
+      const sortValue = sortSelect ? sortSelect.value : "newest";
+
+      if (sortValue === "oldest") return a.modified - b.modified;
+      if (sortValue === "name") return a.name.localeCompare(b.name, "zh-CN");
+      if (sortValue === "favorite") {
+        return Number(b.favorite) - Number(a.favorite) || b.modified - a.modified;
+      }
+      return b.modified - a.modified;
+    });
 }
 
 function openPreview(id) {
