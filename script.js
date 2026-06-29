@@ -21,6 +21,12 @@ const cloudTagsInput = document.querySelector("#cloudTagsInput");
 const cloudUploadButton = document.querySelector("#cloudUploadButton");
 const uploadStatus = document.querySelector("#uploadStatus");
 
+const intentInput = document.querySelector("#intentInput");
+const recommendButton = document.querySelector("#recommendButton");
+const recommendationSummary = document.querySelector("#recommendationSummary");
+const recommendations = document.querySelector("#recommendations");
+const exampleButtons = document.querySelectorAll("[data-example]");
+
 const storageKey = "meme-library-v1";
 const imagePattern = /\.(png|jpe?g|gif|webp|avif)$/i;
 
@@ -41,7 +47,10 @@ if (folderInput) {
 if (searchInput) searchInput.addEventListener("input", render);
 if (sortSelect) sortSelect.addEventListener("change", render);
 if (favoritesOnly) favoritesOnly.addEventListener("change", render);
-if (closeDialog) closeDialog.addEventListener("click", () => dialog.close());
+
+if (closeDialog && dialog) {
+  closeDialog.addEventListener("click", () => dialog.close());
+}
 
 if (uploadStatus) {
   uploadStatus.textContent = "上传组件已加载。";
@@ -49,6 +58,26 @@ if (uploadStatus) {
 
 if (cloudUploadButton) {
   cloudUploadButton.onclick = uploadCloudMeme;
+}
+
+if (recommendButton) {
+  recommendButton.addEventListener("click", renderRecommendations);
+}
+
+exampleButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    if (!intentInput) return;
+    intentInput.value = button.dataset.example || "";
+    renderRecommendations();
+  });
+});
+
+if (intentInput) {
+  intentInput.addEventListener("keydown", (event) => {
+    if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+      renderRecommendations();
+    }
+  });
 }
 
 if (tagInput) {
@@ -74,6 +103,7 @@ if (tagInput) {
     }
 
     render();
+    renderRecommendations();
   });
 }
 
@@ -86,6 +116,7 @@ if (favoriteButton) {
     saveMeme(meme);
     openPreview(meme.id);
     render();
+    renderRecommendations();
   });
 }
 
@@ -180,6 +211,7 @@ async function uploadCloudMeme() {
     uploadStatus.textContent = "上传成功。";
 
     await loadCloudMemes();
+    renderRecommendations();
   } catch (error) {
     uploadStatus.textContent = error.message || "上传失败，请检查 Supabase 权限。";
   } finally {
@@ -223,10 +255,14 @@ async function loadCloudMemes() {
           url: publicUrl,
           favorite: Boolean(item.favorite),
           tags: Array.isArray(row.tags) ? row.tags : [],
+          description: row.description || "",
+          useCases: Array.isArray(row.use_cases) ? row.use_cases : [],
+          emotion: row.emotion || "",
         };
       });
 
     render();
+    renderRecommendations();
   } catch (error) {
     memes = [];
     if (summary) {
@@ -256,10 +292,14 @@ function loadLocalFiles(files) {
         url: URL.createObjectURL(file),
         favorite: Boolean(item.favorite),
         tags: Array.isArray(item.tags) ? item.tags : [],
+        description: "",
+        useCases: [],
+        emotion: "",
       };
     });
 
   render();
+  renderRecommendations();
 }
 
 function render() {
@@ -313,6 +353,7 @@ function render() {
       meme.favorite = !meme.favorite;
       saveMeme(meme);
       render();
+      renderRecommendations();
     });
 
     row.append(date, star);
@@ -331,6 +372,168 @@ function render() {
   if (emptyState) emptyState.hidden = memes.length > 0;
 }
 
+function renderRecommendations() {
+  if (!recommendations || !recommendationSummary) return;
+
+  const query = intentInput ? intentInput.value.trim() : "";
+  recommendations.innerHTML = "";
+
+  if (!query) {
+    recommendationSummary.textContent = "输入你的想法，系统会从模板库里推荐最合适的梗图。";
+    return;
+  }
+
+  if (!memes.length) {
+    recommendationSummary.textContent = "模板库还没有图片。";
+    return;
+  }
+
+  const ranked = rankMemes(query).slice(0, 5);
+
+  if (!ranked.length) {
+    recommendationSummary.textContent = "没有找到明显匹配的模板，试试换一种说法或补充标签。";
+    return;
+  }
+
+  recommendationSummary.textContent = `根据“${query}”推荐 ${ranked.length} 个模板。`;
+
+  ranked.forEach((result, index) => {
+    const meme = result.meme;
+
+    const card = document.createElement("article");
+    card.className = "recommendation-card";
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.addEventListener("click", () => openPreview(meme.id));
+
+    const img = document.createElement("img");
+    img.src = meme.url;
+    img.alt = meme.name;
+    img.loading = "lazy";
+
+    const body = document.createElement("div");
+    body.className = "recommendation-body";
+
+    const rank = document.createElement("div");
+    rank.className = "recommendation-rank";
+    rank.textContent = `Top ${index + 1}`;
+
+    const title = document.createElement("div");
+    title.className = "recommendation-title";
+    title.textContent = meme.name;
+
+    const reason = document.createElement("div");
+    reason.className = "recommendation-reason";
+    reason.textContent = result.reason;
+
+    body.append(rank, title, reason);
+    button.append(img, body);
+    card.append(button);
+    recommendations.append(card);
+  });
+}
+
+function rankMemes(query) {
+  const tokens = tokenize(query);
+
+  return memes
+    .map((meme) => {
+      const fields = [
+        meme.name,
+        meme.path,
+        meme.description,
+        meme.emotion,
+        ...(meme.tags || []),
+        ...(meme.useCases || []),
+      ];
+
+      const haystack = normalizeText(fields.join(" "));
+      let score = 0;
+      const matched = [];
+
+      for (const token of tokens) {
+        if (!token) continue;
+
+        if (haystack.includes(token)) {
+          score += token.length >= 2 ? 3 : 1;
+          matched.push(token);
+        }
+
+        for (const field of fields) {
+          const normalizedField = normalizeText(String(field));
+          if (normalizedField === token) {
+            score += 4;
+          }
+        }
+      }
+
+      score += semanticBoost(query, meme);
+
+      if (meme.favorite) score += 0.5;
+
+      return {
+        meme,
+        score,
+        reason: makeReason(matched, meme, score),
+      };
+    })
+    .filter((result) => result.score > 0)
+    .sort((a, b) => b.score - a.score || b.meme.modified - a.meme.modified);
+}
+
+function semanticBoost(query, meme) {
+  const text = normalizeText(query);
+  const memeText = normalizeText([
+    meme.name,
+    meme.description,
+    meme.emotion,
+    ...(meme.tags || []),
+    ...(meme.useCases || []),
+  ].join(" "));
+
+  const groups = [
+    {
+      query: ["ai", "人工智能", "自动", "效率", "偷懒", "手动"],
+      meme: ["ai", "人工智能", "效率", "拒绝", "工作流"],
+      boost: 5,
+    },
+    {
+      query: ["震惊", "惊讶", "破防", "被吓到", "反应"],
+      meme: ["震惊", "惊讶", "反应", "猫", "破防"],
+      boost: 5,
+    },
+    {
+      query: ["上班", "老板", "需求", "工作", "加班"],
+      meme: ["上班", "老板", "需求", "工作", "加班", "职场"],
+      boost: 4,
+    },
+    {
+      query: ["崩溃", "无语", "累", "不想", "受不了"],
+      meme: ["崩溃", "无语", "累", "破防", "不想"],
+      boost: 4,
+    },
+  ];
+
+  return groups.reduce((total, group) => {
+    const queryHit = group.query.some((word) => text.includes(normalizeText(word)));
+    const memeHit = group.meme.some((word) => memeText.includes(normalizeText(word)));
+    return total + (queryHit && memeHit ? group.boost : 0);
+  }, 0);
+}
+
+function makeReason(matched, meme, score) {
+  const tags = meme.tags && meme.tags.length ? `标签：${meme.tags.slice(0, 3).join("、")}` : "";
+  const uniqueMatched = [...new Set(matched)].slice(0, 3);
+
+  if (uniqueMatched.length) {
+    return `匹配关键词：${uniqueMatched.join("、")}${tags ? `；${tags}` : ""}`;
+  }
+
+  if (tags) return tags;
+  return `综合相似度：${score.toFixed(1)}`;
+}
+
 function getVisibleMemes() {
   const query = searchInput ? searchInput.value.trim().toLowerCase() : "";
 
@@ -339,7 +542,7 @@ function getVisibleMemes() {
       if (favoritesOnly && favoritesOnly.checked && !meme.favorite) return false;
       if (!query) return true;
 
-      return `${meme.name} ${meme.path} ${meme.tags.join(" ")}`
+      return `${meme.name} ${meme.path} ${meme.tags.join(" ")} ${meme.description} ${meme.useCases.join(" ")} ${meme.emotion}`
         .toLowerCase()
         .includes(query);
     })
@@ -416,6 +619,22 @@ function parseTags(value) {
     .map((tag) => tag.trim())
     .filter(Boolean)
     .slice(0, 12);
+}
+
+function tokenize(value) {
+  const normalized = normalizeText(value);
+  const latinTokens = normalized.match(/[a-z0-9]+/g) || [];
+  const cjkTokens = normalized.match(/[\u4e00-\u9fa5]{1,4}/g) || [];
+
+  return [...new Set([...latinTokens, ...cjkTokens])].filter((token) => token.length > 0);
+}
+
+function normalizeText(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[，。！？、,.!?;；:：()[\]{}"'“”‘’_-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function makeSafeFileName(originalName) {
