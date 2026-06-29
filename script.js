@@ -76,6 +76,14 @@ if (recommendButton) {
   recommendButton.onclick = renderRecommendations;
 }
 
+if (renderMemeButton) {
+  renderMemeButton.onclick = renderSelectedMeme;
+}
+
+if (downloadMemeButton) {
+  downloadMemeButton.onclick = downloadGeneratedMeme;
+}
+
 exampleButtons.forEach((button) => {
   button.addEventListener("click", () => {
     if (!intentInput) return;
