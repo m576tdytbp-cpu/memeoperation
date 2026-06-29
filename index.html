@@ -19,6 +19,24 @@
       </label>
     </header>
 
+    <section class="intent-panel">
+  <h2>生成梗图</h2>
+  <div class="intent-grid">
+    <textarea id="intentInput" rows="3" placeholder="输入你想表达的内容，例如：我想表达拒绝手动干活，直接用 AI"></textarea>
+    <button id="recommendButton" type="button">推荐 Top5</button>
+  </div>
+
+  <div class="intent-examples">
+    <button type="button" data-example="我想表达拒绝手动干活，直接用 AI">拒绝手动干活</button>
+    <button type="button" data-example="我想吐槽老板说这个需求很简单">吐槽需求很简单</button>
+    <button type="button" data-example="我想表达我被一句话震惊到了">被一句话震惊</button>
+    <button type="button" data-example="我想表达表面很淡定，内心已经崩溃">表面淡定内心崩溃</button>
+  </div>
+
+  <p id="recommendationSummary" class="recommendation-summary">输入你的想法，系统会从模板库里推荐最合适的梗图。</p>
+  <div id="recommendations" class="recommendations"></div>
+</section>
+    
     <section class="controls">
       <input id="searchInput" type="search" placeholder="搜索文件名或标签" />
       <select id="sortSelect">
