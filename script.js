@@ -52,12 +52,27 @@ if (cloudUploadButton) {
 }
 
 if (tagInput) {
-  tagInput.addEventListener("change", () => {
+  tagInput.addEventListener("change", async () => {
     const meme = memes.find((item) => item.id === activeId);
     if (!meme) return;
 
-    meme.tags = parseTags(tagInput.value);
-    saveMeme(meme);
+    const nextTags = parseTags(tagInput.value);
+    meme.tags = nextTags;
+
+    try {
+      await updateCloudMeme(meme.id, {
+        tags: nextTags,
+      });
+
+      if (detailMeta) {
+        detailMeta.textContent = `${formatSize(meme.size)} · ${meme.path} · 标签已保存`;
+      }
+    } catch (error) {
+      if (detailMeta) {
+        detailMeta.textContent = `${formatSize(meme.size)} · ${meme.path} · 标签保存失败`;
+      }
+    }
+
     render();
   });
 }
@@ -357,6 +372,26 @@ function openPreview(id) {
   if (favoriteButton) favoriteButton.textContent = meme.favorite ? "取消收藏" : "收藏";
 
   if (!dialog.open) dialog.showModal();
+}
+
+async function updateCloudMeme(id, payload) {
+  const response = await fetch(`${supabaseUrl}/rest/v1/memes?id=eq.${id}`, {
+    method: "PATCH",
+    headers: {
+      apikey: supabaseKey,
+      Authorization: `Bearer ${supabaseKey}`,
+      "Content-Type": "application/json",
+      Prefer: "return=representation",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Supabase update failed: ${errorText}`);
+  }
+
+  return response.json();
 }
 
 function saveMeme(meme) {
