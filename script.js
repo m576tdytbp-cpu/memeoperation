@@ -425,7 +425,7 @@ function renderRecommendations() {
 
     const button = document.createElement("button");
     button.type = "button";
-    button.addEventListener("click", () => openPreview(meme.id));
+    button.addEventListener("click", () => selectTemplateForComposer(meme.id));
 
     const img = document.createElement("img");
     img.src = meme.url;
