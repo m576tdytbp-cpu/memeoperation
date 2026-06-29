@@ -60,8 +60,12 @@ if (cloudUploadButton) {
   cloudUploadButton.onclick = uploadCloudMeme;
 }
 
+if (recommendationSummary) {
+  recommendationSummary.textContent = "推荐组件已加载。输入需求后点击推荐 Top5。";
+}
+
 if (recommendButton) {
-  recommendButton.addEventListener("click", renderRecommendations);
+  recommendButton.onclick = renderRecommendations;
 }
 
 exampleButtons.forEach((button) => {
