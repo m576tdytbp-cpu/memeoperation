@@ -264,7 +264,9 @@ async function loadCloudMemes() {
       .map((row) => {
         const id = String(row.id);
         const item = saved[id] || {};
-        const publicUrl = `${supabaseUrl}/storage/v1/object/public/${bucketName}/${row.file_path}`;
+        const publicUrl = isRemoteUrl(row.file_path)
+  ? row.file_path
+  : `${supabaseUrl}/storage/v1/object/public/${bucketName}/${row.file_path}`;
 
         return {
           id,
