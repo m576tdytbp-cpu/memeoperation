@@ -628,7 +628,19 @@ function parseTags(value) {
 function tokenize(value) {
   const normalized = normalizeText(value);
   const latinTokens = normalized.match(/[a-z0-9]+/g) || [];
-  const cjkTokens = normalized.match(/[\u4e00-\u9fa5]{1,4}/g) || [];
+  const cjkSequences = normalized.match(/[\u4e00-\u9fa5]+/g) || [];
+  const cjkTokens = [];
+
+  cjkSequences.forEach((sequence) => {
+    for (let start = 0; start < sequence.length; start += 1) {
+      for (let length = 1; length <= 4; length += 1) {
+        const token = sequence.slice(start, start + length);
+        if (token.length > 0) {
+          cjkTokens.push(token);
+        }
+      }
+    }
+  });
 
   return [...new Set([...latinTokens, ...cjkTokens])].filter((token) => token.length > 0);
 }
