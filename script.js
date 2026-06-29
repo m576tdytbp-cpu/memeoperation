@@ -611,6 +611,146 @@ function getVisibleMemes() {
     });
 }
 
+function selectTemplateForComposer(id) {
+  const meme = memes.find((item) => item.id === id);
+  if (!meme || !composerPanel) return;
+
+  selectedTemplateId = id;
+  composerPanel.hidden = false;
+
+  if (topTextInput && !topTextInput.value.trim()) {
+    topTextInput.value = "";
+  }
+
+  if (bottomTextInput) {
+    bottomTextInput.value = intentInput ? intentInput.value.trim() : "";
+  }
+
+  renderSelectedMeme();
+
+  composerPanel.scrollIntoView({
+    behavior: "smooth",
+    block: "start",
+  });
+}
+
+async function renderSelectedMeme() {
+  if (!memeCanvas || !selectedTemplateId) return;
+
+  const meme = memes.find((item) => item.id === selectedTemplateId);
+  if (!meme) return;
+
+  const context = memeCanvas.getContext("2d");
+  const image = await loadImage(meme.url);
+
+  const canvasSize = 900;
+  memeCanvas.width = canvasSize;
+  memeCanvas.height = canvasSize;
+
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, canvasSize, canvasSize);
+
+  const imageBox = fitImage(image.width, image.height, canvasSize, canvasSize);
+  context.drawImage(image, imageBox.x, imageBox.y, imageBox.width, imageBox.height);
+
+  const topText = topTextInput ? topTextInput.value.trim() : "";
+  const bottomText = bottomTextInput ? bottomTextInput.value.trim() : "";
+
+  drawMemeText(context, topText, canvasSize / 2, 58, canvasSize - 80, "top");
+  drawMemeText(context, bottomText, canvasSize / 2, canvasSize - 70, canvasSize - 80, "bottom");
+}
+
+function downloadGeneratedMeme() {
+  if (!memeCanvas) return;
+
+  const link = document.createElement("a");
+  link.download = `meme-${Date.now()}.png`;
+  link.href = memeCanvas.toDataURL("image/png");
+  link.click();
+}
+
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.crossOrigin = "anonymous";
+    image.onload = () => resolve(image);
+    image.onerror = reject;
+    image.src = src;
+  });
+}
+
+function fitImage(imageWidth, imageHeight, boxWidth, boxHeight) {
+  const imageRatio = imageWidth / imageHeight;
+  const boxRatio = boxWidth / boxHeight;
+
+  let width = boxWidth;
+  let height = boxHeight;
+
+  if (imageRatio > boxRatio) {
+    height = boxWidth / imageRatio;
+  } else {
+    width = boxHeight * imageRatio;
+  }
+
+  return {
+    width,
+    height,
+    x: (boxWidth - width) / 2,
+    y: (boxHeight - height) / 2,
+  };
+}
+
+function drawMemeText(context, text, x, y, maxWidth, position) {
+  if (!text) return;
+
+  const lines = wrapText(context, text, maxWidth, 52);
+  const lineHeight = 62;
+  const totalHeight = lines.length * lineHeight;
+  const startY = position === "bottom" ? y - totalHeight + lineHeight : y;
+
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.lineJoin = "round";
+  context.font = "700 52px Arial, sans-serif";
+  context.fillStyle = "#ffffff";
+  context.strokeStyle = "#000000";
+  context.lineWidth = 10;
+
+  lines.forEach((line, index) => {
+    const lineY = startY + index * lineHeight;
+    context.strokeText(line, x, lineY);
+    context.fillText(line, x, lineY);
+  });
+}
+
+function wrapText(context, text, maxWidth, fontSize) {
+  context.font = `700 ${fontSize}px Arial, sans-serif`;
+
+  const chunks = String(text)
+    .replace(/\s+/g, " ")
+    .split(/(?=[\u4e00-\u9fff])|(?<=[\u4e00-\u9fff])|\s+/)
+    .filter(Boolean);
+
+  const lines = [];
+  let currentLine = "";
+
+  chunks.forEach((chunk) => {
+    const testLine = currentLine ? `${currentLine}${chunk}` : chunk;
+    const metrics = context.measureText(testLine);
+
+    if (metrics.width > maxWidth && currentLine) {
+      lines.push(currentLine);
+      currentLine = chunk;
+    } else {
+      currentLine = testLine;
+    }
+  });
+
+  if (currentLine) lines.push(currentLine);
+
+  return lines.slice(0, 5);
+}
+
 function openPreview(id) {
   const meme = memes.find((item) => item.id === id);
   if (!meme || !dialog) return;
