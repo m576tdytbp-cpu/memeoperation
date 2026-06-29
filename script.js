@@ -456,6 +456,10 @@ function renderRecommendations() {
   });
 }
 
+function isRemoteUrl(value) {
+  return /^https?:\/\//i.test(String(value || ""));
+}
+
 function rankMemes(query) {
   const normalizedQuery = normalizeText(query);
   const tokens = tokenize(query);
