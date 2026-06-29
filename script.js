@@ -27,6 +27,13 @@ const recommendationSummary = document.querySelector("#recommendationSummary");
 const recommendations = document.querySelector("#recommendations");
 const exampleButtons = document.querySelectorAll("[data-example]");
 
+const composerPanel = document.querySelector("#composerPanel");
+const memeCanvas = document.querySelector("#memeCanvas");
+const topTextInput = document.querySelector("#topTextInput");
+const bottomTextInput = document.querySelector("#bottomTextInput");
+const renderMemeButton = document.querySelector("#renderMemeButton");
+const downloadMemeButton = document.querySelector("#downloadMemeButton");
+
 const storageKey = "meme-library-v1";
 const imagePattern = /\.(png|jpe?g|gif|webp|avif)$/i;
 
