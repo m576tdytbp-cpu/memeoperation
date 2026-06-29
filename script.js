@@ -43,6 +43,7 @@ const bucketName = "memes";
 
 let memes = [];
 let activeId = "";
+let selectedTemplateId = "";
 let saved = loadSaved();
 
 if (folderInput) {
