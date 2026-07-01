@@ -87,6 +87,18 @@ if (downloadMemeButton) {
   downloadMemeButton.onclick = downloadGeneratedMeme;
 }
 
+if (closeComposerButton) {
+  closeComposerButton.onclick = closeComposerModal;
+}
+
+if (composerPanel) {
+  composerPanel.addEventListener("click", (event) => {
+    if (event.target === composerPanel) {
+      closeComposerModal();
+    }
+  });
+}
+
 exampleButtons.forEach((button) => {
   button.addEventListener("click", () => {
     if (!intentInput) return;
