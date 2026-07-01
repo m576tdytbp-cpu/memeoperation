@@ -33,6 +33,7 @@ const topTextInput = document.querySelector("#topTextInput");
 const bottomTextInput = document.querySelector("#bottomTextInput");
 const renderMemeButton = document.querySelector("#renderMemeButton");
 const downloadMemeButton = document.querySelector("#downloadMemeButton");
+const closeComposerButton = document.querySelector("#closeComposerButton");
 
 const storageKey = "meme-library-v1";
 const imagePattern = /\.(png|jpe?g|gif|webp|avif)$/i;
