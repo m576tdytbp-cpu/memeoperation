@@ -46,6 +46,8 @@ let activeId = "";
 let selectedTemplateId = "";
 let saved = loadSaved();
 
+setupComposerModal();
+
 if (folderInput) {
   folderInput.addEventListener("change", (event) => {
     loadLocalFiles([...event.target.files]);
@@ -99,6 +101,12 @@ if (intentInput) {
     }
   });
 }
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && composerPanel && !composerPanel.hidden) {
+    closeComposerModal();
+  }
+});
 
 if (tagInput) {
   tagInput.addEventListener("change", async () => {
@@ -260,13 +268,13 @@ async function loadCloudMemes() {
     const rows = await response.json();
 
     memes = rows
-      .filter((row) => row.file_path && imagePattern.test(row.file_path))
+      .filter((row) => row.file_path && (imagePattern.test(row.file_path) || isRemoteUrl(row.file_path)))
       .map((row) => {
         const id = String(row.id);
         const item = saved[id] || {};
         const publicUrl = isRemoteUrl(row.file_path)
-  ? row.file_path
-  : `${supabaseUrl}/storage/v1/object/public/${bucketName}/${row.file_path}`;
+          ? row.file_path
+          : `${supabaseUrl}/storage/v1/object/public/${bucketName}/${row.file_path}`;
 
         return {
           id,
@@ -456,10 +464,6 @@ function renderRecommendations() {
   });
 }
 
-function isRemoteUrl(value) {
-  return /^https?:\/\//i.test(String(value || ""));
-}
-
 function rankMemes(query) {
   const normalizedQuery = normalizeText(query);
   const tokens = tokenize(query);
@@ -593,6 +597,74 @@ function makeReason(matched, meme, score) {
   return `综合相似度：${score.toFixed(1)}`;
 }
 
+function setupComposerModal() {
+  if (!composerPanel) return;
+
+  composerPanel.hidden = true;
+  composerPanel.setAttribute("role", "dialog");
+  composerPanel.setAttribute("aria-modal", "true");
+
+  Object.assign(composerPanel.style, {
+    position: "fixed",
+    inset: "0",
+    zIndex: "9999",
+    overflow: "auto",
+    background: "rgba(20, 20, 20, 0.62)",
+    padding: "24px",
+  });
+
+  const inner = document.createElement("div");
+  inner.className = "composer-modal-inner";
+
+  Object.assign(inner.style, {
+    position: "relative",
+    width: "min(1120px, 100%)",
+    margin: "0 auto",
+    borderRadius: "8px",
+    background: "var(--panel, #fff)",
+    padding: "18px",
+    boxShadow: "0 18px 45px rgba(0,0,0,.22)",
+  });
+
+  const closeButton = document.createElement("button");
+  closeButton.type = "button";
+  closeButton.textContent = "×";
+  closeButton.setAttribute("aria-label", "关闭生成弹窗");
+
+  Object.assign(closeButton.style, {
+    position: "absolute",
+    top: "10px",
+    right: "10px",
+    width: "38px",
+    height: "38px",
+    fontSize: "26px",
+    lineHeight: "1",
+    cursor: "pointer",
+    zIndex: "2",
+  });
+
+  closeButton.onclick = closeComposerModal;
+
+  while (composerPanel.firstChild) {
+    inner.appendChild(composerPanel.firstChild);
+  }
+
+  inner.prepend(closeButton);
+  composerPanel.appendChild(inner);
+
+  composerPanel.addEventListener("click", (event) => {
+    if (event.target === composerPanel) {
+      closeComposerModal();
+    }
+  });
+}
+
+function closeComposerModal() {
+  if (!composerPanel) return;
+  composerPanel.hidden = true;
+  selectedTemplateId = "";
+}
+
 function selectTemplateForComposer(id) {
   const meme = memes.find((item) => item.id === id);
   if (!meme || !composerPanel) return;
@@ -609,11 +681,6 @@ function selectTemplateForComposer(id) {
   }
 
   renderSelectedMeme();
-
-  composerPanel.scrollIntoView({
-    behavior: "smooth",
-    block: "start",
-  });
 }
 
 async function renderSelectedMeme() {
@@ -623,32 +690,47 @@ async function renderSelectedMeme() {
   if (!meme) return;
 
   const context = memeCanvas.getContext("2d");
-  const image = await loadImage(meme.url);
 
-  const canvasSize = 900;
-  memeCanvas.width = canvasSize;
-  memeCanvas.height = canvasSize;
+  try {
+    const image = await loadImage(meme.url);
 
-  context.fillStyle = "#ffffff";
-  context.fillRect(0, 0, canvasSize, canvasSize);
+    const canvasSize = 900;
+    memeCanvas.width = canvasSize;
+    memeCanvas.height = canvasSize;
 
-  const imageBox = fitImage(image.width, image.height, canvasSize, canvasSize);
-  context.drawImage(image, imageBox.x, imageBox.y, imageBox.width, imageBox.height);
+    context.fillStyle = "#ffffff";
+    context.fillRect(0, 0, canvasSize, canvasSize);
 
-  const topText = topTextInput ? topTextInput.value.trim() : "";
-  const bottomText = bottomTextInput ? bottomTextInput.value.trim() : "";
+    const imageBox = fitImage(image.width, image.height, canvasSize, canvasSize);
+    context.drawImage(image, imageBox.x, imageBox.y, imageBox.width, imageBox.height);
 
-  drawMemeText(context, topText, canvasSize / 2, 58, canvasSize - 80, "top");
-  drawMemeText(context, bottomText, canvasSize / 2, canvasSize - 70, canvasSize - 80, "bottom");
+    const topText = topTextInput ? topTextInput.value.trim() : "";
+    const bottomText = bottomTextInput ? bottomTextInput.value.trim() : "";
+
+    drawMemeText(context, topText, canvasSize / 2, 58, canvasSize - 80, "top");
+    drawMemeText(context, bottomText, canvasSize / 2, canvasSize - 70, canvasSize - 80, "bottom");
+  } catch (error) {
+    context.clearRect(0, 0, memeCanvas.width, memeCanvas.height);
+    context.fillStyle = "#ffffff";
+    context.fillRect(0, 0, memeCanvas.width || 900, memeCanvas.height || 900);
+    context.fillStyle = "#111111";
+    context.font = "700 34px Arial, sans-serif";
+    context.textAlign = "center";
+    context.fillText("图片加载失败，可能是外链跨域限制", 450, 450);
+  }
 }
 
 function downloadGeneratedMeme() {
   if (!memeCanvas) return;
 
-  const link = document.createElement("a");
-  link.download = `meme-${Date.now()}.png`;
-  link.href = memeCanvas.toDataURL("image/png");
-  link.click();
+  try {
+    const link = document.createElement("a");
+    link.download = `meme-${Date.now()}.png`;
+    link.href = memeCanvas.toDataURL("image/png");
+    link.click();
+  } catch (error) {
+    alert("这张外链图片不允许浏览器合成下载。后续需要把模板图片迁移到 Supabase Storage。");
+  }
 }
 
 function loadImage(src) {
@@ -838,6 +920,10 @@ function tokenize(value) {
   });
 
   return [...new Set([...latinTokens, ...cjkTokens])].filter((token) => token.length > 0);
+}
+
+function isRemoteUrl(value) {
+  return /^https?:\/\//i.test(String(value || ""));
 }
 
 function normalizeText(value) {
