@@ -678,6 +678,16 @@ function closeComposerModal() {
   selectedTemplateId = "";
 }
 
+function closeComposerModal() {
+  if (!composerPanel) return;
+
+  composerPanel.hidden = true;
+  selectedTemplateId = "";
+
+  if (topTextInput) topTextInput.value = "";
+  if (bottomTextInput) bottomTextInput.value = "";
+}
+
 function selectTemplateForComposer(id) {
   const meme = memes.find((item) => item.id === id);
   if (!meme || !composerPanel) return;
@@ -685,7 +695,7 @@ function selectTemplateForComposer(id) {
   selectedTemplateId = id;
   composerPanel.hidden = false;
 
-  if (topTextInput && !topTextInput.value.trim()) {
+  if (topTextInput) {
     topTextInput.value = "";
   }
 
